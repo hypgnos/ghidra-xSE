@@ -48,8 +48,11 @@ public class MnemonicFieldFactory extends FieldFactory {
 	private final static Color BAD_PROTOTYPE_COLOR = Messages.ERROR;
 	private final static String SHOW_UNDERLINE_FOR_REFERENCES =
 		GhidraOptions.MNEMONIC_GROUP_TITLE + Options.DELIMITER + "Underline Fields With References";
+	private final static String FORCE_LOWERCASE = 
+		GhidraOptions.MNEMONIC_GROUP_TITLE + Options.DELIMITER + "Force lowercase";
 
 	private boolean underliningEnabled = true;
+	private boolean forceLowercase = false;
 
 	protected BrowserCodeUnitFormat codeUnitFormat;
 	private ChangeListener codeUnitFormatListener = e -> MnemonicFieldFactory.this.model.update();
@@ -79,6 +82,10 @@ public class MnemonicFieldFactory extends FieldFactory {
 			"Shows an underline on mnemonic " + "fields that have references.");
 		underliningEnabled = fieldOptions.getBoolean(SHOW_UNDERLINE_FOR_REFERENCES, true);
 
+		fieldOptions.registerOption(FORCE_LOWERCASE, false, hl,
+			"Forces mnemonics to lowercase.");
+		forceLowercase = fieldOptions.getBoolean(FORCE_LOWERCASE, false);
+
 		// Create code unit format and associated options - listen for changes
 		codeUnitFormat = new BrowserCodeUnitFormat(fieldOptions, true);
 		codeUnitFormat.addChangeListener(codeUnitFormatListener);
@@ -89,6 +96,10 @@ public class MnemonicFieldFactory extends FieldFactory {
 			Object newValue) {
 		if (optionName.equals(SHOW_UNDERLINE_FOR_REFERENCES)) {
 			underliningEnabled = ((Boolean) newValue).booleanValue();
+			model.update();
+
+		} else if (optionName.equals(FORCE_LOWERCASE)) {
+			forceLowercase = ((Boolean) newValue).booleanValue();
 			model.update();
 		}
 	}
@@ -113,7 +124,12 @@ public class MnemonicFieldFactory extends FieldFactory {
 		}
 
 		boolean underline = underliningEnabled && (cu.getMnemonicReferences().length > 0);
+		
 		String mnemonic = codeUnitFormat.getMnemonicRepresentation(cu);
+		if(forceLowercase) {
+			mnemonic = mnemonic.toLowerCase();
+		}
+
 		Color c = MnemonicColors.NORMAL;
 		if (invalidInstrProto) {
 			c = BAD_PROTOTYPE_COLOR;
@@ -154,6 +170,10 @@ public class MnemonicFieldFactory extends FieldFactory {
 		Address referenceAddress = getReferenceAddress(cu);
 
 		String mnemonic = codeUnitFormat.getMnemonicRepresentation(cu);
+		if(forceLowercase) {
+			mnemonic = mnemonic.toLowerCase();
+		}
+		
 		return new MnemonicFieldLocation(cu.getProgram(), cu.getMinAddress(), referenceAddress,
 			cpath, mnemonic, col);
 	}
